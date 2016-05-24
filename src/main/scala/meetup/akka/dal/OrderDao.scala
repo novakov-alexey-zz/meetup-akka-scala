@@ -9,6 +9,16 @@ import meetup.akka.om.OrderType._
 import org.mybatis.scala.mapping.{ResultMap, _}
 
 object OrderDaoMapping {
+  val completeBatch = new Update[(LocalDateTime, Long)] {
+    override def xsql =
+      """
+        UPDATE OrderLog
+        SET complete_batch_date = #{_1, typeHandler = meetup.akka.dal.LocalDateTimeTypeHandler}
+        WHERE orderid
+        <= #{_2}
+      """
+  }
+
   val selectOrders = new SelectList[OrderEntity] {
     resultMap = new ResultMap[OrderEntity] {
       id(property = "orderId", column = "orderId")
@@ -20,11 +30,10 @@ object OrderDaoMapping {
       result(property = "quantity", column = "quantity")
     }
 
-    def xsql = "SELECT * FROM OrderLog"
+    override def xsql = "SELECT * FROM OrderLog"
   }
 
   val saveOrder = new Insert[OrderEntity] {
-
     override def xsql =
       <xsql>
         INSERT INTO OrderLog (orderId, executionDate, orderType, executionPrice, symbol, userId, quantity)
@@ -37,7 +46,7 @@ object OrderDaoMapping {
       </xsql>
   }
 
-  def bind: Seq[Statement] = Seq(selectOrders, saveOrder)
+  def bind: Seq[Statement] = Seq(selectOrders, saveOrder, completeBatch)
 }
 
 class OrderEntity {
@@ -65,7 +74,7 @@ object OrderEntity {
 }
 
 trait IOrderDao {
-  def completeBatch(upToId: Long)
+  def completeBatch(upToId: Long, withDate: LocalDateTime)
 
   def saveOrder(order: Order)
 
@@ -77,7 +86,8 @@ class OrderDaoImpl extends IOrderDao {
 
   override def getOrders: Seq[Order] = db.readOnly { implicit session => OrderDaoMapping.selectOrders().map(_.toOrder) }
 
-  override def completeBatch(upToId: Long): Unit = ???
+  override def completeBatch(upToId: Long, withDate: LocalDateTime): Unit =
+    db.transaction { implicit session => OrderDaoMapping.completeBatch((withDate, upToId)) }
 
   override def saveOrder(order: Order): Unit =
     db.transaction { implicit session => OrderDaoMapping.saveOrder(OrderEntity.toOrderEntity(order)) }

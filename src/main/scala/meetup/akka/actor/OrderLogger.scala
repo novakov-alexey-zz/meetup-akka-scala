@@ -11,16 +11,16 @@ class OrderLogger(orderDao: IOrderDao) extends Actor {
   val log = Logging(context.system, this)
 
   override def receive: Receive = {
-    case p@PreparedOrderForAck(deliveryId: Long, preparedOrder: PreparedOrder) =>
+    case p@PreparedOrderForAck(deliveryId: Long, preparedOrder: PreparedOrder) ⇒
       randomFail(p)
       log.info("order to be persisted = {}", p)
-      val order: Order = new Order(preparedOrder.orderId, preparedOrder.order)
+      val order = new Order(preparedOrder.orderId, preparedOrder.order)
       orderDao.saveOrder(order)
       log.info("order saved = {}", order)
       sender ! new LoggedOrder(deliveryId, order)
 
-    case c@CompleteBatch =>
-      orderDao.completeBatch(10)
+    case c: CompleteBatch ⇒
+      orderDao.completeBatch(c.upToId, c.withDate)
       log.info("Batch completed.")
   }
 

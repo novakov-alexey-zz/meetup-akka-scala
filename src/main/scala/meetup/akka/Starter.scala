@@ -1,5 +1,7 @@
 package meetup.akka
 
+import java.time.LocalDateTime
+
 import meetup.akka.dal.IOrderDao
 import meetup.akka.om.Order
 import meetup.akka.service.OrderGateway
@@ -18,9 +20,7 @@ object Starter extends App {
   completeBatch()
   orderGateway.stop()
 
-  def placeOrders() = {
-    ParRange(1, orders, 1, inclusive = true) foreach (i => orderGateway.placeOrder)
-  }
+  def placeOrders() = ParRange(1, orders, 1, inclusive = true) foreach (i => orderGateway.placeOrder)
 
   @tailrec
   def checkOrdersInStorage(orderSeq: Seq[Order]): Unit = {
@@ -34,7 +34,7 @@ object Starter extends App {
   }
 
   def completeBatch() = {
-    orderGateway.completeBatch(10)
+    orderGateway.completeBatch(10, LocalDateTime.now)
     Thread.sleep(3000)
   }
 }

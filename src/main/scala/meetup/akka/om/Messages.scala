@@ -26,4 +26,4 @@ case class LoggedOrder(deliveryId: Long, order: Order)
 
 case class PreparedOrderForAck(deliveryId: Long, preparedOrder: PreparedOrder)
 
-case class CompleteBatch(upToId: Int)
+case class CompleteBatch(upToId: Int, withDate: LocalDateTime)

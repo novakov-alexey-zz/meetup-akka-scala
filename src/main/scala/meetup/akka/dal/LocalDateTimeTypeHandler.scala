@@ -8,31 +8,15 @@ import org.apache.ibatis.`type`.{BaseTypeHandler, JdbcType}
 
 
 class LocalDateTimeTypeHandler extends BaseTypeHandler[LocalDateTime] {
-  override def getNullableResult(rs: ResultSet, columnName: String): LocalDateTime = {
-    val ts = rs.getTimestamp(columnName)
-    if (ts != null) {
-      return LocalDateTime.ofInstant(ts.toInstant, ZoneId.systemDefault)
-    }
-    null
-  }
+  override def getNullableResult(rs: ResultSet, columnName: String): LocalDateTime =
+    Option(rs.getTimestamp(columnName)).map(ts => LocalDateTime.ofInstant(ts.toInstant, ZoneId.systemDefault)).orNull
 
-  override def getNullableResult(rs: ResultSet, columnIndex: Int): LocalDateTime = {
-    val ts = rs.getTimestamp(columnIndex)
-    if (ts != null) {
-      return LocalDateTime.ofInstant(ts.toInstant, ZoneId.systemDefault)
-    }
-    null
-  }
+  override def getNullableResult(rs: ResultSet, columnIndex: Int): LocalDateTime =
+    Option(rs.getTimestamp(columnIndex)).map(ts => LocalDateTime.ofInstant(ts.toInstant, ZoneId.systemDefault)).orNull
 
-  override def getNullableResult(cs: CallableStatement, columnIndex: Int): LocalDateTime = {
-    val ts = cs.getTimestamp(columnIndex)
-    if (ts != null) {
-      return LocalDateTime.ofInstant(ts.toInstant, ZoneId.systemDefault)
-    }
-    null
-  }
+  override def getNullableResult(cs: CallableStatement, columnIndex: Int): LocalDateTime =
+    Option(cs.getTimestamp(columnIndex)).map(ts => LocalDateTime.ofInstant(ts.toInstant, ZoneId.systemDefault)).orNull
 
-  override def setNonNullParameter(ps: PreparedStatement, i: Int, parameter: LocalDateTime, jdbcType: JdbcType): Unit = {
+  override def setNonNullParameter(ps: PreparedStatement, i: Int, parameter: LocalDateTime, jdbcType: JdbcType): Unit =
     ps.setTimestamp(i, Timestamp.valueOf(parameter), GregorianCalendar.from(ZonedDateTime.of(parameter, ZoneId.systemDefault)))
-  }
 }

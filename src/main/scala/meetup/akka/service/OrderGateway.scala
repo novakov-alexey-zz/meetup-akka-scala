@@ -1,8 +1,10 @@
 package meetup.akka.service
 
+import java.time.LocalDateTime
+
 import akka.actor.{ActorSystem, Props}
 import meetup.akka.actor.OrderProcessor
-import meetup.akka.dal.{IOrderDao, OrderDaoImpl}
+import meetup.akka.dal.IOrderDao
 import meetup.akka.om.{CompleteBatch, NewOrder, Order}
 import meetup.akka.service.OrderUtil.generateRandomOrder
 
@@ -16,7 +18,7 @@ class OrderGateway(orderDao: IOrderDao) {
     order
   }
 
-  def completeBatch(upToId: Int) = orderProcessor ! CompleteBatch(upToId)
+  def completeBatch(upToId: Int, withDate: LocalDateTime) = orderProcessor ! CompleteBatch(upToId, withDate)
 
   def stop() = system.terminate()
 }
