@@ -14,8 +14,7 @@ object OrderDaoMapping {
       """
         UPDATE OrderLog
         SET complete_batch_date = #{_1, typeHandler = meetup.akka.dal.LocalDateTimeTypeHandler}
-        WHERE orderid
-        <= #{_2}
+        WHERE orderid <= #{_2}
       """
   }
 

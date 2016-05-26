@@ -12,10 +12,6 @@ case class Order(orderId: Long = -1, executionDate: LocalDateTime, orderType: Or
 
   def this(orderId: Long, order: Order) =
     this(orderId, order.executionDate, order.orderType, order.executionPrice, order.symbol, order.userId, order.quantity)
-
-  def this(orderId: Long, executionDate: Null, orderType: OrderType,
-           executionPrice: BigDecimal, symbol: String, userId: Int, quantity: Int) =
-    this(orderId, LocalDateTime.now, orderType, executionPrice, symbol, userId, quantity)
 }
 
 case class NewOrder(order: Order)
