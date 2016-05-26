@@ -1,18 +1,21 @@
 package meetup.akka.actor
 
-import akka.actor.Props
+import akka.actor.{ActorPath, ActorRef, Props}
 import akka.event.Logging
 import akka.persistence.{AtLeastOnceDelivery, PersistentActor}
 import akka.routing.RoundRobinPool
 import meetup.akka.dal.IOrderDao
 import meetup.akka.om._
 
-class OrderProcessor(orderDao: IOrderDao) extends PersistentActor with AtLeastOnceDelivery {
+class OrderProcessor(orderDao: IOrderDao, orderIdGeneratorActor: Option[ActorRef] = None, orderLoggerActor: Option[ActorPath] = None)
+  extends PersistentActor with AtLeastOnceDelivery {
+
   val log = Logging(context.system, this)
 
-  val orderIdGenerator = context.actorOf(Props[OrderIdGenerator], "orderIdGenerator")
+  val orderIdGenerator = orderIdGeneratorActor.getOrElse(context.actorOf(Props[OrderIdGenerator], "orderIdGenerator"))
   val loggerInst = 5
-  val orderLogger = context.actorOf(RoundRobinPool(loggerInst).props(Props(classOf[OrderLogger], orderDao)), "orderLogger").path
+  val orderLogger = orderLoggerActor
+    .getOrElse(context.actorOf(RoundRobinPool(loggerInst).props(Props(classOf[OrderLogger], orderDao)), "orderLogger").path)
 
   override def receiveRecover: Receive = {
     case m ⇒ generateOrderId(m)
@@ -45,7 +48,7 @@ class OrderProcessor(orderDao: IOrderDao) extends PersistentActor with AtLeastOn
   }
 
   private def updateState(event: Any): Unit = event match {
-    case p: PreparedOrder => deliver(orderLogger)(deliveryId ⇒ new PreparedOrderForAck(deliveryId, p))
+    case p: PreparedOrder => deliver(orderLogger)(deliveryId ⇒ PreparedOrderForAck(deliveryId, p))
     case loggedOrder: LoggedOrder => confirmDelivery(loggedOrder.deliveryId)
     case m ⇒ log.error("Cannot update state for message: {}", m)
   }

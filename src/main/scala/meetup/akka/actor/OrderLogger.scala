@@ -12,16 +12,17 @@ class OrderLogger(orderDao: IOrderDao) extends Actor {
 
   override def receive: Receive = {
     case p@PreparedOrderForAck(deliveryId: Long, preparedOrder: PreparedOrder) ⇒
-      randomFail(p)
+      //randomFail(p)
       log.info("order to be persisted = {}", p)
       val order = new Order(preparedOrder.orderId, preparedOrder.order)
       orderDao.saveOrder(order)
       log.info("order saved = {}", order)
-      sender ! new LoggedOrder(deliveryId, order)
+      sender ! LoggedOrder(deliveryId, order)
 
     case c: CompleteBatch ⇒
       orderDao.completeBatch(c.upToId, c.withDate)
       log.info("Batch completed.")
+      sender ! BatchCompleted(c.upToId)
   }
 
   private def randomFail(p: PreparedOrderForAck) =
