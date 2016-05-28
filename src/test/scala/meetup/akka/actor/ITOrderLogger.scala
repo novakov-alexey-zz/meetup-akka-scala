@@ -1,6 +1,6 @@
 package meetup.akka.actor
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.LocalDateTime
 
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
@@ -36,7 +36,7 @@ class ITOrderLogger extends TestKit(ActorSystem("OrderProcessing")) with FlatSpe
     val persistenceActor = actor(orderDao)
     val withDate = LocalDateTime.now
     //when
-    orderDao.completeBatch _ expects (1L, withDate)
+    orderDao.completeBatch _ expects(1L, withDate)
     persistenceActor ! CompleteBatch(1, withDate)
     //then
     val batchCompleted = expectMsgAnyClassOf(classOf[BatchCompleted])
