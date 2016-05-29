@@ -4,8 +4,8 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 
 import meetup.akka.Config
-import meetup.akka.om.Order
 import meetup.akka.om.OrderType._
+import meetup.akka.om.{Execution, Order}
 import org.mybatis.scala.mapping.{ResultMap, _}
 
 object OrderDaoMapping {
@@ -45,7 +45,15 @@ object OrderDaoMapping {
       </xsql>
   }
 
-  def bind: Seq[Statement] = Seq(selectOrders, saveOrder, completeBatch)
+  val insertExecution = new Insert[Execution] {
+    override def xsql =
+      <xsql>
+        INSERT INTO OrderExecution (orderId, executionDate, quantity)
+        VALUES (#{{orderId}}, #{{executionDate, typeHandler = meetup.akka.dal.LocalDateTimeTypeHandler}}, #{{quantity}})
+      </xsql>
+  }
+
+  def bind: Seq[Statement] = Seq(selectOrders, saveOrder, completeBatch, insertExecution)
 }
 
 class OrderEntity {
@@ -78,6 +86,8 @@ trait IOrderDao {
   def saveOrder(order: Order)
 
   def getOrders: Seq[Order]
+
+  def insertExecution(execution: Execution)
 }
 
 class OrderDaoImpl extends IOrderDao {
@@ -90,4 +100,7 @@ class OrderDaoImpl extends IOrderDao {
 
   override def saveOrder(order: Order): Unit =
     db.transaction { implicit session => OrderDaoMapping.saveOrder(OrderEntity.toOrderEntity(order)) }
+
+  override def insertExecution(execution: Execution): Unit =
+    db.transaction { implicit session => OrderDaoMapping.insertExecution(execution) }
 }

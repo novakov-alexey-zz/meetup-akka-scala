@@ -10,14 +10,24 @@ import scala.util.Random
 class OrderLogger(orderDao: IOrderDao) extends Actor {
   val log = Logging(context.system, this)
 
+  @scala.throws[Exception](classOf[Exception])
+  override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
+    super.preRestart(reason, message)
+    log.error(reason, "I am going to be restarted")
+  }
+
   override def receive: Receive = {
-    case p@PreparedOrderForAck(deliveryId: Long, preparedOrder: PreparedOrder) ⇒
-      //randomFail(p)
+    case p@LogOrder(deliveryId, preparedOrder) ⇒
+      randomFail(p)
       log.info("order to be persisted = {}", p)
       val order = new Order(preparedOrder.orderId, preparedOrder.order)
       orderDao.saveOrder(order)
       log.info("order saved = {}", order)
       sender ! LoggedOrder(deliveryId, order)
+
+    case eq: ExecutedQuantity =>
+      orderDao.insertExecution(Execution(eq.orderId, eq.quantity, eq.executionDate))
+      log.info("saved execution = {}", eq)
 
     case c: CompleteBatch ⇒
       orderDao.completeBatch(c.upToId, c.withDate)
@@ -25,6 +35,6 @@ class OrderLogger(orderDao: IOrderDao) extends Actor {
       sender ! BatchCompleted(c.upToId)
   }
 
-  private def randomFail(p: PreparedOrderForAck) =
-    if (Random.nextInt % 2 == 0) throw new RuntimeException("random fail on message: " + p)
+  private def randomFail(p: LogOrder) =
+    if (Random.nextInt % 2 == 0) throw new UnsupportedOperationException("random fail on message: " + p)
 }

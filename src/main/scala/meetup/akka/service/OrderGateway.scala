@@ -10,7 +10,7 @@ import meetup.akka.service.OrderUtil.generateRandomOrder
 
 class OrderGateway(orderDao: IOrderDao) {
   private val system = ActorSystem("OrderGatewaySystem")
-  val orderProcessor = system.actorOf(Props.create(classOf[OrderProcessor], orderDao, None, None), "orderProcessor")
+  val orderProcessor = system.actorOf(Props.create(classOf[OrderProcessor], orderDao, None, None, None), "orderProcessor")
 
   def placeOrder: Order = {
     val order = generateRandomOrder

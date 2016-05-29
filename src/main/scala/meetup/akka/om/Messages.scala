@@ -1,7 +1,7 @@
 package meetup.akka.om
 
 import java.math.BigDecimal
-import java.time.LocalDateTime
+import java.time.{LocalDate, LocalDateTime}
 
 import meetup.akka.om.OrderType.OrderType
 
@@ -14,13 +14,19 @@ case class Order(orderId: Long = -1, executionDate: LocalDateTime, orderType: Or
     this(orderId, order.executionDate, order.orderType, order.executionPrice, order.symbol, order.userId, order.quantity)
 }
 
+case class Execution(orderId: Long, quantity: Int, executionDate: LocalDateTime)
+
 case class NewOrder(order: Order)
 
 case class PreparedOrder(order: Order, orderId: Long)
 
 case class LoggedOrder(deliveryId: Long, order: Order)
 
-case class PreparedOrderForAck(deliveryId: Long, preparedOrder: PreparedOrder)
+case class LogOrder(deliveryId: Long, preparedOrder: PreparedOrder)
+
+case class ExecuteOrder(orderId: Long, quantity: Int)
+
+case class ExecutedQuantity(orderId: Long, quantity: Int, executionDate: LocalDateTime)
 
 case class CompleteBatch(upToId: Int, withDate: LocalDateTime)
 

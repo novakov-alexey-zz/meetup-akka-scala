@@ -24,7 +24,7 @@ class ITOrderLogger extends TestKit(ActorSystem("OrderProcessing")) with FlatSpe
     val orderWithId = new Order(2, order)
     //when
     orderDao.saveOrder _ expects orderWithId
-    orderLogger ! PreparedOrderForAck(1L, PreparedOrder(order, 2))
+    orderLogger ! LogOrder(1L, PreparedOrder(order, 2))
     //then
     val savedOrder = expectMsgAnyClassOf(classOf[LoggedOrder])
     savedOrder.order should be(orderWithId)

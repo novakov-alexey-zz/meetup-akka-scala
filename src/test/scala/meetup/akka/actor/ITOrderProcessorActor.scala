@@ -16,31 +16,29 @@ import scala.util.Random
 class ITOrderProcessorActor extends TestKit(ActorSystem("OrderProcessing")) with FlatSpecLike with ImplicitSender
   with BeforeAndAfterAll with Matchers with MockFactory {
 
+  //given
+  val orderIdGenerator = TestProbe()
+  val orderLogger = TestProbe()
+  val orderExecutor = TestProbe()
+  val dao = mock[IOrderDao]
+  val orderProcessor = orderProcessorActor(dao, orderIdGenerator, orderLogger, orderExecutor)
+  val order = OrderUtil.generateRandomOrder
+
   it should "generate id and persist incoming order" in {
-    //given
-    val orderIdGenerator = TestProbe()
-    val orderLogger = TestProbe()
-    val orderProcessor = orderProcessorActor(orderIdGenerator, orderLogger)
-    val order = OrderUtil.generateRandomOrder
     //when
     orderProcessor ! NewOrder(order)
     //then
-    val receivedOrder = orderIdGenerator.expectMsg(order)
+    val receivedOrder = orderIdGenerator.expectMsgAnyClassOf(classOf[Order])
     receivedOrder should be(order)
 
     //when
     orderProcessor ! PreparedOrder(order, 1)
     //then
-    val preparedOrderForAck = orderLogger.expectMsgAnyClassOf(classOf[PreparedOrderForAck])
+    val preparedOrderForAck = orderLogger.expectMsgAnyClassOf(classOf[LogOrder])
     preparedOrderForAck.preparedOrder.orderId should be(1)
   }
 
   it should "complete batch" in {
-    //given
-    val orderIdGenerator = TestProbe()
-    val orderLogger = TestProbe()
-    val execution = TestProbe()
-    val orderProcessor = orderProcessorActor(orderIdGenerator, orderLogger)
     //when
     orderProcessor ! CompleteBatch(10, LocalDateTime.now)
     //then
@@ -48,8 +46,8 @@ class ITOrderProcessorActor extends TestKit(ActorSystem("OrderProcessing")) with
     completeBatchForId.upToId should be(10)
   }
 
-  def orderProcessorActor(orderIdGenerator: TestProbe, orderLogger: TestProbe) =
-    system.actorOf(Props(classOf[OrderProcessor], mock[IOrderDao], Some(orderIdGenerator.ref), Some(orderLogger.ref.path)),
+  def orderProcessorActor(orderDao: IOrderDao, orderIdGenerator: TestProbe, orderLogger: TestProbe, orderExecutor: TestProbe) =
+    system.actorOf(Props(classOf[OrderProcessor], orderDao, Some(orderIdGenerator.ref), Some(orderLogger.ref.path), Some(orderExecutor.ref)),
       "orderProcessor" + Random.nextInt)
 
   override def afterAll = TestKit.shutdownActorSystem(system)

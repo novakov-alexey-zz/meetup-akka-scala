@@ -1,21 +1,31 @@
 package meetup.akka.actor
 
-import akka.actor.{ActorPath, ActorRef, Props}
+import akka.actor.SupervisorStrategy.{Escalate, Restart, Resume, Stop}
+import akka.actor.{ActorPath, ActorRef, OneForOneStrategy, Props}
 import akka.event.Logging
 import akka.persistence.{AtLeastOnceDelivery, PersistentActor}
 import akka.routing.RoundRobinPool
 import meetup.akka.dal.IOrderDao
 import meetup.akka.om._
 
-class OrderProcessor(orderDao: IOrderDao, orderIdGeneratorActor: Option[ActorRef] = None, orderLoggerActor: Option[ActorPath] = None)
+import scala.concurrent.duration._
+
+class OrderProcessor(orderDao: IOrderDao, orderIdGeneratorActor: Option[ActorRef],
+                     orderLoggerActor: Option[ActorPath], orderExecutorActor: Option[ActorRef])
   extends PersistentActor with AtLeastOnceDelivery {
 
+  val orderIdGenerator = orderIdGeneratorActor.getOrElse(context.actorOf(Props[OrderIdGenerator], "orderIdGenerator"))
+  val orderLogger = orderLoggerActor.getOrElse(
+    context.actorOf(RoundRobinPool(nrOfInstances = 5).props(Props(classOf[OrderLogger], orderDao)), "orderLogger").path)
+  val orderExecutor = orderExecutorActor.getOrElse(context.actorOf(Props(classOf[OrderExecutor], orderLogger)))
   val log = Logging(context.system, this)
 
-  val orderIdGenerator = orderIdGeneratorActor.getOrElse(context.actorOf(Props[OrderIdGenerator], "orderIdGenerator"))
-  val loggerInst = 5
-  val orderLogger = orderLoggerActor
-    .getOrElse(context.actorOf(RoundRobinPool(loggerInst).props(Props(classOf[OrderLogger], orderDao)), "orderLogger").path)
+  override def supervisorStrategy = OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {
+    case _: UnsupportedOperationException => Resume
+    case _: NullPointerException => Restart
+    case _: IllegalArgumentException => Stop
+    case _: Exception => Escalate
+  }
 
   override def receiveRecover: Receive = {
     case m ⇒ generateOrderId(m)
@@ -31,9 +41,9 @@ class OrderProcessor(orderDao: IOrderDao, orderIdGeneratorActor: Option[ActorRef
       persist(preparedOrder)(updateState)
 
     case loggedOrder: LoggedOrder ⇒
-      log.info("Logging confirmation received for order: {}", loggedOrder)
       updateState(loggedOrder)
       log.info("Delivery confirmed for order = {}", loggedOrder)
+      orderExecutor ! ExecuteOrder(loggedOrder.order.orderId, loggedOrder.order.quantity)
 
     case c: CompleteBatch ⇒
       log.info("Going to complete batch.")
@@ -48,7 +58,7 @@ class OrderProcessor(orderDao: IOrderDao, orderIdGeneratorActor: Option[ActorRef
   }
 
   private def updateState(event: Any): Unit = event match {
-    case p: PreparedOrder => deliver(orderLogger)(deliveryId ⇒ PreparedOrderForAck(deliveryId, p))
+    case p: PreparedOrder => deliver(orderLogger)(deliveryId ⇒ LogOrder(deliveryId, p))
     case loggedOrder: LoggedOrder => confirmDelivery(loggedOrder.deliveryId)
     case m ⇒ log.error("Cannot update state for message: {}", m)
   }
