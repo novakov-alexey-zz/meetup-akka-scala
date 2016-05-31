@@ -1,5 +1,6 @@
 package meetup.akka.actor
 
+import java.nio.file.Paths
 import java.time.LocalDateTime
 
 import akka.actor.{ActorSystem, Props}
@@ -45,6 +46,9 @@ class ITOrderProcessorActor extends TestKit(ActorSystem("OrderProcessing")) with
     val completeBatchForId = orderLogger.expectMsgAnyClassOf(classOf[CompleteBatch])
     completeBatchForId.upToId should be(10)
   }
+
+  //remove journal to not recover the during the test
+  override protected def beforeAll() = Paths.get("target/journal").toFile.listFiles().foreach(f => f.delete())
 
   def orderProcessorActor(orderDao: IOrderDao, orderIdGenerator: TestProbe, orderLogger: TestProbe, orderExecutor: TestProbe) =
     system.actorOf(Props(classOf[OrderProcessor], orderDao, Some(orderIdGenerator.ref), Some(orderLogger.ref.path), Some(orderExecutor.ref)),

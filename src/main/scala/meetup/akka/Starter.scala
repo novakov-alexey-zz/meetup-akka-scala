@@ -28,7 +28,7 @@ object Starter extends App {
       Thread.sleep(2000)
       checkOrdersInStorage(orderDao.getOrders)
     } else {
-      println("\nOrders are in storage: ")
+      println("\nOrders are in the storage: ")
       orderSeq.foreach(println)
     }
   }

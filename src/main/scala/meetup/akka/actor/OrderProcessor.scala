@@ -1,7 +1,7 @@
 package meetup.akka.actor
 
 import akka.actor.SupervisorStrategy.{Escalate, Restart, Resume, Stop}
-import akka.actor.{ActorPath, ActorRef, OneForOneStrategy, Props}
+import akka.actor.{ActorPath, ActorRef, FSM, OneForOneStrategy, Props}
 import akka.event.Logging
 import akka.persistence.{AtLeastOnceDelivery, PersistentActor}
 import akka.routing.RoundRobinPool
@@ -10,9 +10,8 @@ import meetup.akka.om._
 
 import scala.concurrent.duration._
 
-class OrderProcessor(orderDao: IOrderDao, orderIdGeneratorActor: Option[ActorRef],
-                     orderLoggerActor: Option[ActorPath], orderExecutorActor: Option[ActorRef])
-  extends PersistentActor with AtLeastOnceDelivery {
+class OrderProcessor(orderDao: IOrderDao, orderIdGeneratorActor: Option[ActorRef], orderLoggerActor: Option[ActorPath],
+                     orderExecutorActor: Option[ActorRef]) extends PersistentActor with AtLeastOnceDelivery {
 
   val orderIdGenerator = orderIdGeneratorActor.getOrElse(context.actorOf(Props[OrderIdGenerator], "orderIdGenerator"))
   val orderLogger = orderLoggerActor.getOrElse(

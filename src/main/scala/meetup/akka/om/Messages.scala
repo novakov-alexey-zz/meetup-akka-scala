@@ -5,8 +5,8 @@ import java.time.{LocalDate, LocalDateTime}
 
 import meetup.akka.om.OrderType.OrderType
 
-case class Order(orderId: Long = -1, executionDate: LocalDateTime, orderType: OrderType,
-                 executionPrice: BigDecimal, symbol: String, userId: Int, quantity: Int) {
+case class Order(orderId: Long = -1, executionDate: LocalDateTime, orderType: OrderType, executionPrice: BigDecimal,
+                 symbol: String, userId: Int, quantity: Int) {
   def this(orderType: OrderType, executionPrice: BigDecimal, symbol: String, userId: Int, quantity: Int) =
     this(-1, LocalDateTime.now, orderType, executionPrice, symbol, userId, quantity)
 
