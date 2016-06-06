@@ -6,8 +6,7 @@ import meetup.akka.om.PreparedOrder
 import meetup.akka.service.OrderUtil
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
-class ITOrderIdGeneratorActor extends TestKit(ActorSystem("OrderProcessing")) with FlatSpecLike with ImplicitSender
-  with BeforeAndAfterAll with Matchers {
+class ITOrderIdGeneratorActor extends TestKit(ActorSystem("OrderProcessing")) with FlatSpecLike with ImplicitSender with Matchers {
   behavior of "OrderIdGenerator"
 
   it should "generate next order" in {

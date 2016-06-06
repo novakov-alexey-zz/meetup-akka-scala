@@ -8,12 +8,12 @@ import meetup.akka.dal.IOrderDao
 import meetup.akka.om._
 import meetup.akka.service.OrderUtil
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
+import org.scalatest.{FlatSpecLike, Matchers}
 
 import scala.util.Random
 
-class ITOrderLogger extends TestKit(ActorSystem("OrderProcessing")) with FlatSpecLike with ImplicitSender
-  with BeforeAndAfterAll with Matchers with MockFactory {
+class ITOrderLogger extends TestKit(ActorSystem("OrderProcessing")) with FlatSpecLike with ImplicitSender with Matchers
+  with MockFactory {
   behavior of "OrderLogger"
 
   it should "save order" in {
@@ -43,5 +43,5 @@ class ITOrderLogger extends TestKit(ActorSystem("OrderProcessing")) with FlatSpe
     batchCompleted.upToId should be(1)
   }
 
-  def actor(orderDao: IOrderDao) = system.actorOf(Props(classOf[OrderLogger], orderDao), "persist" + Random.nextInt())
+  def actor(orderDao: IOrderDao) = system.actorOf(Props(classOf[OrderLogger], orderDao, false), "persist" + Random.nextInt())
 }

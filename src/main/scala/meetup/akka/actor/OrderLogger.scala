@@ -7,7 +7,7 @@ import meetup.akka.om._
 
 import scala.util.Random
 
-class OrderLogger(orderDao: IOrderDao) extends Actor {
+class OrderLogger(orderDao: IOrderDao, randomFail: Boolean) extends Actor {
   val log = Logging(context.system, this)
 
   @scala.throws[Exception](classOf[Exception])
@@ -18,7 +18,7 @@ class OrderLogger(orderDao: IOrderDao) extends Actor {
 
   override def receive: Receive = {
     case p@LogOrder(deliveryId, preparedOrder) ⇒
-      randomFail(p)
+      if (randomFail) randomFail(p)
       log.info("order to be persisted = {}", p)
       val order = new Order(preparedOrder.orderId, preparedOrder.order)
       orderDao.saveOrder(order)
