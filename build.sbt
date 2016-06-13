@@ -11,8 +11,8 @@ autoScalaLibrary := false
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.6" % "test",
   "org.scalamock" %% "scalamock-scalatest-support" % "3.2.2" % "test",
-  "com.typesafe.akka" %% "akka-actor" % "2.4.5",
-  "com.typesafe.akka" %% "akka-persistence" % "2.4.5",
+  "com.typesafe.akka" %% "akka-actor" % "2.4.7",
+  "com.typesafe.akka" %% "akka-persistence" % "2.4.7",
   "org.iq80.leveldb" % "leveldb" % "0.7",
   "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8",
   "mysql" % "mysql-connector-java" % "5.1.16",
