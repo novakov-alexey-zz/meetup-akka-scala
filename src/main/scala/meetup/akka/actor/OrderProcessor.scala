@@ -20,10 +20,10 @@ class OrderProcessor(orderDao: IOrderDao, idGeneratorActor: Option[ActorRef], lo
   val log = Logging(context.system, this)
 
   override def supervisorStrategy = OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {
-    case _: UnsupportedOperationException => Resume
-    case _: NullPointerException => Restart
-    case _: IllegalArgumentException => Stop
-    case _: Exception => Escalate
+    case _: UnsupportedOperationException ⇒ Resume
+    case _: NullPointerException ⇒ Restart
+    case _: IllegalArgumentException ⇒ Stop
+    case _: Exception ⇒ Escalate
   }
 
   override def receiveCommand: Receive = {

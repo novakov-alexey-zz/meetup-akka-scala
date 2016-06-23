@@ -14,11 +14,15 @@ case object Idle extends State
 
 case object Active extends State
 
+case object AckProcessing extends State
+
 sealed trait Data
 
 case object Uninitialized extends Data
 
 final case class PendingBatch(queue: Seq[ExecuteOrder]) extends Data
+
+final case class AckBatch(replies: Seq[Any]) extends Data
 
 object OrderExecutor {
   val execQuantity = 3
@@ -29,7 +33,7 @@ class OrderExecutor(orderLogger: ActorPath) extends FSM[State, Data] {
   startWith(Idle, Uninitialized)
 
   when(Idle) {
-    case Event(eo: ExecuteOrder, Uninitialized) => goto(Active) using PendingBatch(Seq(eo))
+    case Event(eo: ExecuteOrder, _) => goto(Active) using PendingBatch(Seq(eo))
   }
 
   when(Active) {
@@ -48,15 +52,18 @@ class OrderExecutor(orderLogger: ActorPath) extends FSM[State, Data] {
     case Idle -> Active =>
       nextStateData match {
         case PendingBatch(q) => log.info("New batch created, first message = {}", q.head)
+        case _ => log.error("State is not applicable")
       }
   }
 
   private def flush(queue: Seq[ExecuteOrder]): Unit = {
     log.info("Going to execute next queue of orders = {}", queue)
+    val orderLoggerSelection = context.actorSelection(orderLogger)
+
     queue foreach { eo =>
       val quantities = Seq.fill(execQuantity)(Random.nextInt(eo.quantity / execQuantity))
       quantities.par.foreach { q =>
-        context.actorSelection(orderLogger) ! ExecutedQuantity(eo.orderId, q, LocalDateTime.now)
+        orderLoggerSelection ! ExecutedQuantity(eo.orderId, q, LocalDateTime.now)
       }
     }
   }
