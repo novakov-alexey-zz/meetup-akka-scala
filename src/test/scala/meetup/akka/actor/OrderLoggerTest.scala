@@ -29,7 +29,6 @@ class OrderLoggerTest extends TestKit(ActorSystem("testSystem")) with FlatSpecLi
     //given
     val orderDao = stub[IOrderDao]
     val orderLoggerRef = testActor(orderDao)
-    val generatedOrder = OrderUtil.generateRandomOrder
     val executionDate = LocalDateTime.now
     val quantity = 13
     val orderId = 2
