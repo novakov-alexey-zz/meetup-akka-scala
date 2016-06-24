@@ -14,9 +14,13 @@ class OrderProcessor(orderDao: IOrderDao, idGeneratorActor: Option[ActorRef], lo
                      executorActor: Option[ActorRef]) extends PersistentActor with AtLeastOnceDelivery {
 
   val idGenerator = idGeneratorActor.getOrElse(context.actorOf(Props[OrderIdGenerator], "orderIdGenerator"))
+
   val logger = loggerActor.getOrElse(context.actorOf(RoundRobinPool(nrOfInstances = 5)
     .props(Props(classOf[OrderLogger], orderDao, true)), "orderLogger").path)
-  val executor = executorActor.getOrElse(context.actorOf(Props(classOf[OrderExecutor], logger)))
+
+  val batchSize = 10
+  val executor = executorActor.getOrElse(context.actorOf(Props(classOf[OrderExecutor], logger, batchSize)))
+
   val log = Logging(context.system, this)
 
   override def supervisorStrategy = OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {

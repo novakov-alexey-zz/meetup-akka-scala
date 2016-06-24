@@ -28,6 +28,10 @@ case class ExecuteOrder(orderId: Long, quantity: Int)
 
 case class ExecutedQuantity(orderId: Long, quantity: Int, executionDate: LocalDateTime)
 
+case class ExecutionAck(orderId: Long, quantity: Int, executionId: Long)
+
+case class AllAcksReceived(replies: Seq[ExecutionAck])
+
 case class CompleteBatch(upToId: Int, withDate: LocalDateTime)
 
 case class BatchCompleted(upToId: Int)

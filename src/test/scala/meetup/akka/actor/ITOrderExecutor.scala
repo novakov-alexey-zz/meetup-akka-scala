@@ -1,34 +1,61 @@
 package meetup.akka.actor
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
-import meetup.akka.om.{ExecuteOrder, ExecutedQuantity}
+import meetup.akka.om.{AllAcksReceived, ExecuteOrder, ExecutedQuantity, ExecutionAck}
 import org.scalatest.{FlatSpecLike, Matchers}
 
 class ITOrderExecutor extends TestKit(ActorSystem("OrderProcessing")) with FlatSpecLike with ImplicitSender with Matchers {
 
   it should "batch orders and send to OrderLogger" in {
     //given
+    val batchSize: Int = 10
     val orderLogger = TestProbe()
-    val orderExecutor = system.actorOf(Props(classOf[OrderExecutor], orderLogger.ref.path), "orderExecutor")
+    val orderExecutor = system.actorOf(Props(classOf[OrderExecutor], orderLogger.ref.path, batchSize), "orderExecutor")
 
     //when
-    (1 until OrderExecutor.batchSize).par.foreach { i =>
-      orderExecutor ! ExecuteOrder(i, 200)
-    }
+    sendAllMessagesExceptOne(batchSize, orderExecutor)
     //then
     orderLogger.expectNoMsg()
 
     //when
-    orderExecutor ! ExecuteOrder(10, 400)
+    sendOneOrder(orderExecutor)
     //then
-    1 to OrderExecutor.batchSize * OrderExecutor.execQuantity foreach { i =>
+    expectAllMessageAreLogged(batchSize, orderLogger)
+
+    //when
+    sendOneOrder(orderExecutor)
+    //then
+    orderLogger.expectNoMsg()
+
+    //when
+    sendOneAck(orderExecutor)
+    //then
+    orderLogger.expectNoMsg()
+
+    //when
+    sendAllTheRestAcks(batchSize, orderExecutor)
+    //then
+    val allAcksReceived = orderLogger.expectMsgAnyClassOf(classOf[AllAcksReceived])
+    allAcksReceived.replies.length should be(batchSize * OrderExecutor.execQuantity)
+  }
+
+  def sendAllTheRestAcks(batchSize: Int, orderExecutor: ActorRef): Unit =
+    (1 until batchSize * OrderExecutor.execQuantity).par.foreach { i =>
+      sendOneAck(orderExecutor)
+    }
+
+  def sendOneAck(orderExecutor: ActorRef) = orderExecutor ! ExecutionAck(1, 200, 1)
+
+  def expectAllMessageAreLogged(batchSize: Int, orderLogger: TestProbe): Unit =
+    1 to batchSize * OrderExecutor.execQuantity foreach { i =>
       orderLogger.expectMsgAnyClassOf(classOf[ExecutedQuantity])
     }
 
-    //when
-    orderExecutor ! ExecuteOrder(1, 200)
-    //then
-    orderLogger.expectNoMsg()
-  }
+  def sendOneOrder(orderExecutor: ActorRef): Unit = orderExecutor ! ExecuteOrder(10, 400)
+
+  def sendAllMessagesExceptOne(batchSize: Int, orderExecutor: ActorRef): Unit =
+    (1 until batchSize).par.foreach { i =>
+      sendOneOrder(orderExecutor)
+    }
 }
