@@ -65,7 +65,7 @@ class OrderEntity {
   var userId: Int = _
   var quantity: Int = _
 
-  def toOrder = new Order(orderId, executionDate, orderType, executionPrice, symbol, userId, quantity)
+  def toOrder = Order(orderId, executionDate, orderType, executionPrice, symbol, userId, quantity)
 }
 
 object OrderEntity {

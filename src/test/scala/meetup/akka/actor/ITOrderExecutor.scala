@@ -9,7 +9,7 @@ class ITOrderExecutor extends TestKit(ActorSystem("OrderProcessing")) with FlatS
 
   it should "batch orders and send to OrderLogger" in {
     //given
-    val batchSize: Int = 10
+    val batchSize = 10
     val orderLogger = TestProbe()
     val orderExecutor = system.actorOf(Props(classOf[OrderExecutor], orderLogger.ref.path, batchSize), "orderExecutor")
 
