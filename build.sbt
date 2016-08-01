@@ -20,3 +20,5 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit"  % "2.4.5"% "test",
   "com.google.inject" % "guice" % "4.0"
 )
+
+fork in Test := true

@@ -14,7 +14,7 @@ case object Idle extends State
 
 case object Active extends State
 
-case object AckProcessing extends State
+case object Completion extends State
 
 sealed trait Data
 
@@ -40,14 +40,14 @@ class OrderExecutor(orderLogger: ActorPath, batchSize: Int) extends FSM[State, D
       b.copy(queue = q :+ eo) match {
         case ub@PendingBatch(uq) if uq.length == batchSize =>
           flush(uq)
-          goto(AckProcessing) using AckBatch(Seq(), batchSize * execQuantity)
+          goto(Completion) using AckBatch(Seq(), batchSize * execQuantity)
         case ub =>
           log.info("new message is added = {}", eo)
           stay using ub
       }
   }
 
-  when(AckProcessing) {
+  when(Completion) {
     case Event(e: ExecutionAck, batch@AckBatch(rs, r)) =>
       batch.copy(rs :+ e, r - 1) match  {
         case uBatch@AckBatch(replies, nr) if nr == 0 =>
@@ -63,7 +63,7 @@ class OrderExecutor(orderLogger: ActorPath, batchSize: Int) extends FSM[State, D
   whenUnhandled {
     case Event(e, s) =>
       log.warning("received unhandled request {} in state {}/{}", e, stateName, s)
-      stay replying AckProcessing
+      stay replying Completion
   }
 
   onTransition {
@@ -73,7 +73,7 @@ class OrderExecutor(orderLogger: ActorPath, batchSize: Int) extends FSM[State, D
         case _ => log.error("State is not applicable")
       }
 
-    case AckProcessing -> Idle => log.info("all ACKs are received, going to the next round")
+    case Completion -> Idle => log.info("all ACKs are received, going to the next round")
   }
 
   private def flush(queue: Seq[ExecuteOrder]): Unit = {

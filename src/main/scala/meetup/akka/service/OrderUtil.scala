@@ -14,5 +14,5 @@ object OrderUtil {
     BigDecimal.valueOf(Random.nextDouble * 100),
     symbols(Random.nextInt(symbols.length)),
     Math.abs(Random.nextInt),
-    Math.abs(Random.nextInt(500)))
+    Math.abs(100 + Random.nextInt(500)))
 }
