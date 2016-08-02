@@ -10,7 +10,7 @@ import scala.util.Random
 class OrderLogger(orderDao: IOrderDao, randomFail: Boolean) extends Actor {
   val log = Logging(context.system, this)
 
-  @scala.throws[Exception](classOf[Exception])
+  @throws[Exception]
   override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
     super.preRestart(reason, message)
     log.error(reason, "I am going to be restarted")
