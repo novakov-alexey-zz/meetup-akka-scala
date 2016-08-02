@@ -1,3 +1,3 @@
 # meetup-akka-scala
 
-That is second tutirial app this time in Scala. See slides for more details.
+That is second tutorial app this time in Scala (original exaple on Java is here: https://github.com/novakov-alexey/meetup-akka-java). See slides for more details.
