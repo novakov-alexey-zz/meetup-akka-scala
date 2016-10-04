@@ -1,0 +1,36 @@
+// arithmetic exp
+val a, b, c = 2
+
+a + b + c match {
+  case 6 => println("six")
+  case 3 => println("three")
+  case _ => println("something else")
+}
+
+// collections
+val list = List("1", "2", "3")
+
+val newList = list match {
+  case x :: xs => list.reverse
+  case x :: Nil => list :: list
+  case Nil => "1" :: "4" :: Nil
+}
+
+// objects
+
+case class Person(name: String, lastName: String)
+case class Programmer(experience: Int)
+
+val p: Any = Person("John", "Smith")
+p match {
+  case Person(name, lastName) => println("Person name is " + name)
+  case Programmer(experience) => println("programmer experince in years" + experience)
+  case _ => print("unknown creature")
+}
+
+
+object A {
+  var state = ""
+}
+
+A.state = "hello"
